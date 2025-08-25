@@ -64,6 +64,18 @@ const Index = () => {
       } else if (q.includes("hyderabad")) {
         const hyderabadRoutes = buses.filter(b => b.routeName.toLowerCase().includes("hyderabad"));
         result = `Hyderabad routes: ${hyderabadRoutes.map(b => `${b.busNo} (${b.routeName})`).join(", ")}`;
+      } else if (q.includes("longest") || q.includes("maximum distance")) {
+        const longest = buses.reduce((max, b) => b.routeDistance > max.routeDistance ? b : max);
+        result = `Longest route: ${longest.routeName} (${longest.busNo}) - ${longest.routeDistance} km`;
+      } else if (q.includes("shortest") || q.includes("minimum distance")) {
+        const shortest = buses.reduce((min, b) => b.routeDistance < min.routeDistance ? b : min);
+        result = `Shortest route: ${shortest.routeName} (${shortest.busNo}) - ${shortest.routeDistance} km`;
+      } else if (q.includes("early") || q.includes("first")) {
+        const earliest = buses.reduce((early, b) => b.firstBusTime < early.firstBusTime ? b : early);
+        result = `Earliest bus service: ${earliest.routeName} (${earliest.busNo}) starts at ${earliest.firstBusTime}`;
+      } else if (q.includes("late") || q.includes("last")) {
+        const latest = buses.reduce((late, b) => b.lastBusTime > late.lastBusTime ? b : late);
+        result = `Latest bus service: ${latest.routeName} (${latest.busNo}) ends at ${latest.lastBusTime}`;
       }
     }
 
@@ -77,36 +89,100 @@ const Index = () => {
         result = `Conductors: ${conductors.map(c => `${c.name} (${c.empId})`).join(", ")} - Total: ${conductors.length}`;
       } else if (q.includes("total")) {
         result = `Total employees: ${employees.length} (Drivers: ${employees.filter(e => e.designation === "Driver").length}, Conductors: ${employees.filter(e => e.designation === "Conductor").length})`;
+      } else if (q.includes("hyderabad")) {
+        const hydEmp = employees.filter(e => e.depotAssigned.toLowerCase().includes("hyderabad"));
+        result = `Hyderabad depot staff: ${hydEmp.map(e => `${e.name} (${e.designation})`).join(", ")}`;
+      } else if (q.includes("warangal")) {
+        const warEmp = employees.filter(e => e.depotAssigned.toLowerCase().includes("warangal"));
+        result = `Warangal depot staff: ${warEmp.map(e => `${e.name} (${e.designation})`).join(", ")}`;
+      } else if (q.includes("khammam")) {
+        const khmEmp = employees.filter(e => e.depotAssigned.toLowerCase().includes("khammam"));
+        result = `Khammam depot staff: ${khmEmp.map(e => `${e.name} (${e.designation})`).join(", ")}`;
       }
     }
 
     // Revenue/Ticket queries
-    if (q.includes("revenue") || q.includes("ticket") || q.includes("income")) {
+    if (q.includes("revenue") || q.includes("ticket") || q.includes("income") || q.includes("earning")) {
       const totalRevenue = tickets.reduce((sum, t) => sum + t.revenueEarned, 0);
       const totalTickets = tickets.reduce((sum, t) => sum + t.ticketsSold, 0);
       
       if (q.includes("total")) {
         result = `Total revenue: ₹${totalRevenue.toLocaleString()}, Total tickets sold: ${totalTickets}`;
-      } else if (q.includes("highest")) {
+      } else if (q.includes("highest") || q.includes("maximum")) {
         const highest = tickets.reduce((max, t) => t.revenueEarned > max.revenueEarned ? t : max);
         result = `Highest revenue: Bus ${highest.busNo} - ₹${highest.revenueEarned.toLocaleString()} (${highest.ticketsSold} tickets)`;
+      } else if (q.includes("lowest") || q.includes("minimum")) {
+        const lowest = tickets.reduce((min, t) => t.revenueEarned < min.revenueEarned ? t : min);
+        result = `Lowest revenue: Bus ${lowest.busNo} - ₹${lowest.revenueEarned.toLocaleString()} (${lowest.ticketsSold} tickets)`;
+      } else if (q.includes("average")) {
+        const avgRevenue = totalRevenue / tickets.length;
+        const avgTickets = totalTickets / tickets.length;
+        result = `Average per bus: ₹${Math.round(avgRevenue).toLocaleString()} revenue, ${Math.round(avgTickets)} tickets`;
       }
     }
 
     // Assignment queries
-    if (q.includes("assignment") || q.includes("duty") || q.includes("shift")) {
+    if (q.includes("assignment") || q.includes("duty") || q.includes("shift") || q.includes("trip")) {
       if (q.includes("morning") || q.includes("am")) {
         const morningShifts = assignments.filter(a => a.shift === "AM");
-        result = `Morning shifts: ${morningShifts.map(a => `${a.empId} on ${a.busNo}`).join(", ")}`;
+        result = `Morning shifts: ${morningShifts.map(a => `${a.empId} on ${a.busNo} (${a.trips} trips)`).join(", ")}`;
       } else if (q.includes("evening") || q.includes("pm")) {
         const eveningShifts = assignments.filter(a => a.shift === "PM");
-        result = `Evening shifts: ${eveningShifts.map(a => `${a.empId} on ${a.busNo}`).join(", ")}`;
+        result = `Evening shifts: ${eveningShifts.map(a => `${a.empId} on ${a.busNo} (${a.trips} trips)`).join(", ")}`;
+      } else if (q.includes("most trips") || q.includes("maximum trips")) {
+        const maxTrips = assignments.reduce((max, a) => a.trips > max.trips ? a : max);
+        result = `Most trips: ${maxTrips.empId} on bus ${maxTrips.busNo} - ${maxTrips.trips} trips, ${maxTrips.distanceTraveled} km`;
+      } else if (q.includes("total distance")) {
+        const totalDistance = assignments.reduce((sum, a) => sum + a.distanceTraveled, 0);
+        result = `Total distance covered: ${totalDistance} km across all assignments`;
+      } else if (q.includes("total trips")) {
+        const totalTrips = assignments.reduce((sum, a) => sum + a.trips, 0);
+        result = `Total trips completed: ${totalTrips} trips today`;
       }
+    }
+
+    // Performance and Analytics
+    if (q.includes("performance") || q.includes("efficiency")) {
+      const totalDistance = assignments.reduce((sum, a) => sum + a.distanceTraveled, 0);
+      const totalTrips = assignments.reduce((sum, a) => sum + a.trips, 0);
+      const avgDistance = totalDistance / assignments.length;
+      result = `Performance metrics: ${totalTrips} total trips, ${totalDistance} km total distance, ${Math.round(avgDistance)} km average per assignment`;
+    }
+
+    // Route-specific queries
+    if (q.includes("route 101") || q.includes("101")) {
+      const route101 = buses.find(b => b.routeNo === "101");
+      if (route101) {
+        result = `Route 101: ${route101.routeName}, Bus: ${route101.busNo}, Distance: ${route101.routeDistance}km, Timing: ${route101.firstBusTime}-${route101.lastBusTime}, Status: ${route101.status}`;
+      }
+    }
+
+    // Date-specific queries
+    if (q.includes("today") || q.includes("2024-01-15")) {
+      const todayRevenue = tickets.reduce((sum, t) => sum + t.revenueEarned, 0);
+      const todayTickets = tickets.reduce((sum, t) => sum + t.ticketsSold, 0);
+      const todayTrips = assignments.reduce((sum, a) => sum + a.trips, 0);
+      result = `Today's summary: ₹${todayRevenue.toLocaleString()} revenue, ${todayTickets} tickets sold, ${todayTrips} trips completed`;
+    }
+
+    // General status queries
+    if (q.includes("status") || q.includes("summary") || q.includes("overview")) {
+      const activeBuses = buses.filter(b => b.status === "Active").length;
+      const totalRevenue = tickets.reduce((sum, t) => sum + t.revenueEarned, 0);
+      const totalEmployees = employees.length;
+      result = `TSRTC Status: ${activeBuses}/${buses.length} buses active, ${totalEmployees} staff members, ₹${totalRevenue.toLocaleString()} revenue today`;
     }
 
     // General search
     if (!result) {
-      result = "I can help you with questions about:\n• Bus status (active/maintenance)\n• Employee details (drivers/conductors)\n• Revenue and ticket sales\n• Duty assignments and shifts\n\nTry asking: 'How many active buses?', 'Total revenue?', 'Who are the drivers?'";
+      result = `I can help you with questions about:
+• Bus status: "How many active buses?", "Which buses are in maintenance?"
+• Routes: "What's the longest route?", "Show Hyderabad routes"
+• Staff: "Who are the drivers?", "Which staff work at Warangal depot?"
+• Revenue: "What's the total revenue?", "Which bus earned most?"
+• Assignments: "Who's on morning shift?", "How many trips completed?"
+• Performance: "What's today's summary?", "Show performance metrics"
+• Specific: "Tell me about route 101", "What's the earliest bus?"`;
     }
 
     setAnswer(result);
