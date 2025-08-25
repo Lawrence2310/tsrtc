@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
 
   // Mock data
   const buses = [
@@ -43,6 +45,73 @@ const Index = () => {
     );
   };
 
+  const handleQuestion = () => {
+    if (!question.trim()) return;
+    
+    const q = question.toLowerCase();
+    let result = "";
+
+    // Bus-related queries
+    if (q.includes("bus") || q.includes("route")) {
+      if (q.includes("active")) {
+        const activeBuses = buses.filter(b => b.status === "Active");
+        result = `Active buses: ${activeBuses.map(b => b.busNo).join(", ")} (Total: ${activeBuses.length})`;
+      } else if (q.includes("maintenance")) {
+        const maintenanceBuses = buses.filter(b => b.status === "Maintenance");
+        result = `Buses in maintenance: ${maintenanceBuses.map(b => b.busNo).join(", ")} (Total: ${maintenanceBuses.length})`;
+      } else if (q.includes("total")) {
+        result = `Total buses: ${buses.length} (Active: ${buses.filter(b => b.status === "Active").length}, Maintenance: ${buses.filter(b => b.status === "Maintenance").length})`;
+      } else if (q.includes("hyderabad")) {
+        const hyderabadRoutes = buses.filter(b => b.routeName.toLowerCase().includes("hyderabad"));
+        result = `Hyderabad routes: ${hyderabadRoutes.map(b => `${b.busNo} (${b.routeName})`).join(", ")}`;
+      }
+    }
+
+    // Employee-related queries
+    if (q.includes("employee") || q.includes("staff") || q.includes("driver") || q.includes("conductor")) {
+      if (q.includes("driver")) {
+        const drivers = employees.filter(e => e.designation === "Driver");
+        result = `Drivers: ${drivers.map(d => `${d.name} (${d.empId})`).join(", ")} - Total: ${drivers.length}`;
+      } else if (q.includes("conductor")) {
+        const conductors = employees.filter(e => e.designation === "Conductor");
+        result = `Conductors: ${conductors.map(c => `${c.name} (${c.empId})`).join(", ")} - Total: ${conductors.length}`;
+      } else if (q.includes("total")) {
+        result = `Total employees: ${employees.length} (Drivers: ${employees.filter(e => e.designation === "Driver").length}, Conductors: ${employees.filter(e => e.designation === "Conductor").length})`;
+      }
+    }
+
+    // Revenue/Ticket queries
+    if (q.includes("revenue") || q.includes("ticket") || q.includes("income")) {
+      const totalRevenue = tickets.reduce((sum, t) => sum + t.revenueEarned, 0);
+      const totalTickets = tickets.reduce((sum, t) => sum + t.ticketsSold, 0);
+      
+      if (q.includes("total")) {
+        result = `Total revenue: ₹${totalRevenue.toLocaleString()}, Total tickets sold: ${totalTickets}`;
+      } else if (q.includes("highest")) {
+        const highest = tickets.reduce((max, t) => t.revenueEarned > max.revenueEarned ? t : max);
+        result = `Highest revenue: Bus ${highest.busNo} - ₹${highest.revenueEarned.toLocaleString()} (${highest.ticketsSold} tickets)`;
+      }
+    }
+
+    // Assignment queries
+    if (q.includes("assignment") || q.includes("duty") || q.includes("shift")) {
+      if (q.includes("morning") || q.includes("am")) {
+        const morningShifts = assignments.filter(a => a.shift === "AM");
+        result = `Morning shifts: ${morningShifts.map(a => `${a.empId} on ${a.busNo}`).join(", ")}`;
+      } else if (q.includes("evening") || q.includes("pm")) {
+        const eveningShifts = assignments.filter(a => a.shift === "PM");
+        result = `Evening shifts: ${eveningShifts.map(a => `${a.empId} on ${a.busNo}`).join(", ")}`;
+      }
+    }
+
+    // General search
+    if (!result) {
+      result = "I can help you with questions about:\n• Bus status (active/maintenance)\n• Employee details (drivers/conductors)\n• Revenue and ticket sales\n• Duty assignments and shifts\n\nTry asking: 'How many active buses?', 'Total revenue?', 'Who are the drivers?'";
+    }
+
+    setAnswer(result);
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
@@ -51,6 +120,33 @@ const Index = () => {
           <p className="text-muted-foreground">Transport Management System</p>
         </div>
 
+        {/* Question Interface */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Ask Questions About Your Data</CardTitle>
+            <CardDescription>Ask questions like "How many active buses?", "Total revenue?", "Who are the drivers?"</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 items-center mb-4">
+              <Input 
+                placeholder="Ask a question about buses, employees, revenue, or assignments..." 
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                className="flex-1"
+                onKeyPress={(e) => e.key === 'Enter' && handleQuestion()}
+              />
+              <Button onClick={handleQuestion}>Ask</Button>
+            </div>
+            {answer && (
+              <div className="bg-muted p-4 rounded-md">
+                <h4 className="font-semibold mb-2">Answer:</h4>
+                <pre className="whitespace-pre-wrap text-sm">{answer}</pre>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Data Search */}
         <div className="mb-6 flex gap-4 items-center">
           <Input 
             placeholder="Search across all data..." 
